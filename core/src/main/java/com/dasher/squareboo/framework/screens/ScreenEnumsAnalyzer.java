@@ -1,23 +1,24 @@
 package com.dasher.squareboo.framework.screens;
 
 import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.ObjectMap;
 import com.dasher.squareboo.framework.io.OutputTemplates;
 import com.dasher.squareboo.framework.screens.enums.IScreenEnum;
 import com.dasher.squareboo.framework.screens.enums.ITransitionEnum;
 
 import java.util.Arrays;
+import java.util.function.Supplier;
 
 import de.eskalon.commons.screen.ManagedScreen;
 import de.eskalon.commons.screen.transition.ScreenTransition;
+import lombok.NonNull;
 
 
 public class ScreenEnumsAnalyzer<S extends ManagedScreen, T extends ScreenTransition, ES extends IScreenEnum> {
-    protected final ObjectMap<Class<? extends S>, ScreenTransitionEntryBox<S, T>> entryBoxes = new ObjectMap<>();
-    private final Array<ScreenTransitionValuesBox<S, T>> valuesBoxes = new Array<>();
-
     public final Array<Object> screenEnumValues = new Array<>();
     public final Array<Object> transitionEnumValues = new Array<>();
+
+    protected final Array<ScreenTransitionEntryBox<S, T>> entryBoxes = new Array<>(ScreenTransitionEntryBox.class);
+    private final Array<ScreenTransitionValuesBox<S, T>> valuesBoxes = new Array<>(ScreenTransitionValuesBox.class);
 
     @SuppressWarnings("unchecked")
     public ScreenEnumsAnalyzer(
@@ -41,7 +42,6 @@ public class ScreenEnumsAnalyzer<S extends ManagedScreen, T extends ScreenTransi
         valuesBoxes.add(valueBox);
     }
 
-    @SuppressWarnings("unchecked")
     public void build() {
         for (int i = 0; i < valuesBoxes.size; i++) {
             var sV = (IScreenEnum) screenEnumValues.get(i);
@@ -50,22 +50,20 @@ public class ScreenEnumsAnalyzer<S extends ManagedScreen, T extends ScreenTransi
             var sEntry = new ScreenEntry<S>(sV, vBox.managedScreen);
             var tEntry = new TransitionEntry<T>(tV, vBox.transition);
             var screenBox = new ScreenTransitionEntryBox<>(sEntry, tEntry);
-            entryBoxes.put((Class<S>) screenBox.screenEntry.value.getClass(), screenBox);
+            entryBoxes.add(screenBox);
         }
     }
 
     public ScreenTransitionEntryBox<S, T> getEntry(ES screenEnum) {
-        for (var entry: entryBoxes.values()) {
-            if (entry.screenEntry.key == screenEnum) {
-                return entry;
-            }
-        }
-        throw new IllegalArgumentException(
-                OutputTemplates.createNotFoundOn(getClass(), screenEnum.getClass())
-        );
+        return Arrays.stream(entryBoxes.items)
+                .filter((s) -> s.screenEntry.key == screenEnum)
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                        OutputTemplates.createNotFoundOn(getClass(), screenEnum.getClass())
+                ));
     }
 
-    private void loopEnum(Class<?> anyEnum, Array<Object> array) {
+    private void loopEnum(@NonNull Class<?> anyEnum, @NonNull Array<Object> array) {
         Arrays.stream(anyEnum.getEnumConstants()).forEach(array::add);
     }
 }

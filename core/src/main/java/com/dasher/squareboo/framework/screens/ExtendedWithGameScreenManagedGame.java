@@ -14,9 +14,12 @@ import lombok.Setter;
 import text.formic.Stringf;
 
 public abstract class ExtendedWithGameScreenManagedGame
-        <S extends ManagedScreen, T extends ScreenTransition,
-                ES extends IScreenEnum, ET extends ITransitionEnum>
+        <S extends WithTransitionGameScreen<?, T>,
+                T extends ScreenTransition,
+                ES extends IScreenEnum,
+                ET extends ITransitionEnum>
         extends ExtendedManagedGame<S, T>  {
+
     protected ScreenEnumsAnalyzer<S, T, ES> screenEnumsAnalyzer;
 
     public ExtendedWithGameScreenManagedGame(
@@ -27,24 +30,10 @@ public abstract class ExtendedWithGameScreenManagedGame
     }
 
     @SuppressWarnings("unchecked")
-    @Override
-    public <I extends S> I createScreen(Class<I> tClass, Object... initArgs) throws IllegalAccessException, InvocationTargetException, InstantiationException {
-        I screen = super.createScreen(tClass, initArgs);
-        if (!(screen instanceof WithTransitionGameScreen)) {
-            throw new IllegalArgumentException(
-                    Stringf.format(
-                            "%s only accepts screens of class: %s",
-                            getClass().getSimpleName(),
-                            WithTransitionGameScreen.class.getSimpleName()
-                    )
-            );
-        }
-
-        var valueBox = (ScreenTransitionValuesBox<S, T>) ((WithTransitionGameScreen<?, T>) screen)
-                .getValueBox();
-
-        screenEnumsAnalyzer.addScreenTransitionValueBox(valueBox);
-
+    protected void addScreen(S screen) {
+        screenEnumsAnalyzer.addScreenTransitionValueBox(
+                (ScreenTransitionValuesBox<S, T>) screen.getValueBox()
+        );
         logger.debug(
                 Stringf.format(
                         "Added %s for the %s",
@@ -52,12 +41,15 @@ public abstract class ExtendedWithGameScreenManagedGame
                         screenEnumsAnalyzer.getClass().getSimpleName()
                 )
         );
-        return screen;
+    }
+
+    protected void pushScreen(ES screeEnum) {
+        getScreenManager().pushScreen(screenEnumsAnalyzer.getEntry(screeEnum));
     }
 
     protected void unpackEnumAnalyzer() {
         screenEnumsAnalyzer.build();
-        var entries = screenEnumsAnalyzer.entryBoxes.values();
+        var entries = screenEnumsAnalyzer.entryBoxes;
         for (var entry: entries) {
             getScreenManager().addBox(entry);
             logger.debug(Stringf.format("Unpacked: %s", entry.toString()));

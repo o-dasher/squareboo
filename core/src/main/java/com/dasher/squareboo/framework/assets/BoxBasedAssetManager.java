@@ -22,34 +22,28 @@ public class BoxBasedAssetManager extends AssetManager implements IThrowsClassNo
     protected final ObjectMap<Class<?>, AssetBox<?>> assetBoxes = new ObjectMap<>();
     protected AssetClassesHolder assetClassesHolder;
 
-    public BoxBasedAssetManager(AssetClassesHolder assetClassesHolder, @NonNull AssetBox<?>... assetBoxes) {
+    /**
+     * @param assetClassesHolder The box which contains all asset boxes that this
+     *                           {@link BoxBasedAssetManager} can use
+     * @param assetBoxes Instances of {@link AssetBox} to be used on
+     *                  this {@link BoxBasedAssetManager} their classes must be included
+     *                  on this instance {@link AssetClassesHolder}'s otherwise
+     *                  {@link ClassNotFoundException} will be thrown
+     * @throws ClassNotFoundException thrown when a {@link AssetBox} class
+     * isn't present on this instance {@link AssetClassesHolder}'s
+     */
+    public BoxBasedAssetManager(AssetClassesHolder assetClassesHolder, @NonNull AssetBox<?>... assetBoxes) throws ClassNotFoundException {
         this.assetClassesHolder = assetClassesHolder;
-        Arrays.stream(assetBoxes).forEach((box) -> this.assetBoxes.put(box.getClass(), box));
+        for (AssetBox<?> assetBox : assetBoxes) {
+            addBox(assetBox);
+        }
     }
 
-    public BoxBasedAssetManager(AssetClassesHolder assetClassesHolder) {
-        this(assetClassesHolder, ((Supplier<AssetBox<?>[]>) () -> {
-            var logger = LoggerService.forClass(BoxBasedAssetManager.class);
-            var assetBoxes = new Array<AssetBox<?>>(AssetBox.class);
-            for (var klass: assetClassesHolder.assetClasses) {
-                try {
-                    var assetBox = klass.getConstructor().newInstance();
-                    logger.debug(
-                            Stringf.format(
-                                    "Instantiated %s for the %s",
-                                    assetBox.getClass().getSimpleName(),
-                                    BoxBasedAssetManager.class.getSimpleName()
-                            )
-                    );
-                    assetBoxes.add(assetBox);
-                } catch (
-                        InstantiationException | IllegalAccessException
-                                | InvocationTargetException | NoSuchMethodException e) {
-                    e.printStackTrace();
-                }
-            }
-            return assetBoxes.toArray();
-        }).get());
+    @SuppressWarnings("unchecked")
+    private void addBox(AssetBox<?> assetBox) throws ClassNotFoundException {
+        var assetClass = assetBox.getClass();
+        verifyIfAssetClassExists((Class<? extends AssetBox<?>>) assetClass);
+        assetBoxes.put(assetClass, assetBox);
     }
 
     private void loadBox(@NonNull AssetBox<?> assetBox) {
@@ -76,8 +70,7 @@ public class BoxBasedAssetManager extends AssetManager implements IThrowsClassNo
     @SneakyThrows
     @SuppressWarnings("unchecked")
     public <A extends AssetBox<?>> A get(Class<A> klass) {
-        if (!assetClassesHolder.assetClasses.contains(klass, false))
-            throwClassNotFoundInThis(klass);
+        verifyIfAssetClassExists(klass);
 
         for (var assetBox : assetBoxes.values())
             if (assetBox.getClass() == klass)
@@ -86,6 +79,11 @@ public class BoxBasedAssetManager extends AssetManager implements IThrowsClassNo
         throwClassNotFoundInThis(klass);
 
         return null;
+    }
+
+    public void verifyIfAssetClassExists(Class<? extends AssetBox<?>> klass) throws ClassNotFoundException {
+        if (!assetClassesHolder.assetClasses.contains(klass, false))
+            throwClassNotFoundInThis(klass);
     }
 
     public void loadBoxes() {

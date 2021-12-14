@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.dasher.squareboo.assets.GameAssetClasses;
+import com.dasher.squareboo.assets.GameTextures;
 import com.dasher.squareboo.framework.assets.BoxBasedAssetManager;
 import com.dasher.squareboo.framework.screens.ExtendedManagedGame;
 import com.dasher.squareboo.framework.screens.ExtendedWithGameScreenManagedGame;
@@ -51,9 +52,12 @@ public class SquareBoo extends ExtendedWithGameScreenManagedGame<BooScreen, Scre
         LoggerService.debug(true);
     }
 
-    private void createAssets() {
+    private void createAssets() throws ClassNotFoundException {
         assetClasses = new GameAssetClasses();
-        assetManager = new BoxBasedAssetManager(assetClasses);
+        assetManager = new BoxBasedAssetManager(
+                assetClasses,
+                new GameTextures()
+        );
         assetManager.loadBoxes();
     }
 
@@ -61,8 +65,8 @@ public class SquareBoo extends ExtendedWithGameScreenManagedGame<BooScreen, Scre
         spriteBatch = new SpriteBatch();
     }
 
-    private void createScreens() throws IllegalAccessException, InstantiationException, InvocationTargetException {
-        createScreen(IntroScreen.class, new BlendingTransition(spriteBatch, 0.25f));
+    private void createScreens() {
+        addScreen(new IntroScreen(this, new BlendingTransition(spriteBatch, 0.25f)));
         unpackEnumAnalyzer();
     }
 
@@ -72,7 +76,7 @@ public class SquareBoo extends ExtendedWithGameScreenManagedGame<BooScreen, Scre
 
         if (assetManager.update()) {
             if (getScreenManager().getCurrentScreen() == null) {
-                getScreenManager().pushScreen(screenEnumsAnalyzer.getEntry(GameScreensKeys.INTRO));
+                pushScreen(GameScreensKeys.INTRO);
             }
         }
 
