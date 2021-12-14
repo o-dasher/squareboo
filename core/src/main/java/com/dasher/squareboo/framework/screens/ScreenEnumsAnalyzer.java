@@ -10,6 +10,7 @@ import java.util.function.Supplier;
 
 import de.eskalon.commons.screen.ManagedScreen;
 import de.eskalon.commons.screen.transition.ScreenTransition;
+import lombok.Getter;
 import lombok.NonNull;
 
 
@@ -17,7 +18,10 @@ public class ScreenEnumsAnalyzer<S extends ManagedScreen, T extends ScreenTransi
     public final Array<Object> screenEnumValues = new Array<>();
     public final Array<Object> transitionEnumValues = new Array<>();
 
-    protected final Array<ScreenTransitionEntryBox<S, T>> entryBoxes = new Array<>(ScreenTransitionEntryBox.class);
+    @Getter
+    private final Array<ScreenTransitionEntryBox<S, T>> entryBoxes = new Array<>(ScreenTransitionEntryBox.class);
+
+    @Getter
     private final Array<ScreenTransitionValuesBox<S, T>> valuesBoxes = new Array<>(ScreenTransitionValuesBox.class);
 
     @SuppressWarnings("unchecked")
@@ -42,6 +46,11 @@ public class ScreenEnumsAnalyzer<S extends ManagedScreen, T extends ScreenTransi
         valuesBoxes.add(valueBox);
     }
 
+    /**
+     * Creates {@link ScreenTransitionEntryBox}s that are added to an internal array to be later
+     * unpacked by a {@link ExtendedWithGameScreenManagedGame}
+     * through the {@link ExtendedWithGameScreenManagedGame#unpackEnumAnalyzer()} method or other
+     */
     public void build() {
         for (int i = 0; i < valuesBoxes.size; i++) {
             var sV = (IScreenEnum) screenEnumValues.get(i);

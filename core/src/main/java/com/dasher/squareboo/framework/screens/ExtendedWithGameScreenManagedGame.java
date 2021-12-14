@@ -47,12 +47,17 @@ public abstract class ExtendedWithGameScreenManagedGame
         getScreenManager().pushScreen(screenEnumsAnalyzer.getEntry(screeEnum));
     }
 
+    /**
+     * Builds this instance {@link ScreenEnumsAnalyzer}'s
+     * calling {@link ScreenEnumsAnalyzer#build()} and then
+     * adds {@link ScreenTransitionEntryBox} with the built entries
+     * to this instance {@link ExtendedScreenManager}'s
+     */
     protected void unpackEnumAnalyzer() {
         screenEnumsAnalyzer.build();
-        var entries = screenEnumsAnalyzer.entryBoxes;
-        for (var entry: entries) {
+        screenEnumsAnalyzer.getEntryBoxes().forEach(entry -> {
             getScreenManager().addBox(entry);
             logger.debug(Stringf.format("Unpacked: %s", entry.toString()));
-        }
+        });
     }
 }
